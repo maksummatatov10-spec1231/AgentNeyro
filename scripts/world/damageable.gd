@@ -54,8 +54,9 @@ func _damage_number(amount: float) -> void:
 	l.outline_size = 8
 	l.pixel_size = 0.012
 	l.no_depth_test = true
-	l.global_position = global_position + Vector3.UP * 1.6
+	# Сначала в дерево, потом — глобальная позиция (иначе предупреждение !is_inside_tree)
 	get_tree().current_scene.add_child(l)
+	l.global_position = global_position + Vector3.UP * 1.6
 	var tw := create_tween()
 	tw.tween_property(l, "global_position:y", l.global_position.y + 1.2, 0.6)
 	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.6)

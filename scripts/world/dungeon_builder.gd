@@ -113,7 +113,7 @@ func _apply_material_recursive(node: Node) -> void:
 	for c in node.get_children():
 		_apply_material_recursive(c)
 
-func _place(path: String, pos: Vector3, rot_y: float = 0.0, sc: float = 1.0) -> Node:
+func _place(path: String, pos: Vector3, rot_y: float = 0.0, sc: float = 1.0, make_collision: bool = false) -> Node:
 	if path.is_empty():
 		return null
 	var res = load(path)
@@ -127,7 +127,16 @@ func _place(path: String, pos: Vector3, rot_y: float = 0.0, sc: float = 1.0) -> 
 		inst.scale = Vector3.ONE * sc
 	add_child(inst)
 	_apply_material_recursive(inst)
+	if make_collision:
+		_add_trimesh_collision(inst)
 	return inst
+
+func _add_trimesh_collision(node: Node) -> void:
+	# Генерируем точную вогнутую коллизию по мешу (стены/колонны/пропы — непроходимы)
+	if node is MeshInstance3D:
+		(node as MeshInstance3D).create_trimesh_collision()
+	for c in node.get_children():
+		_add_trimesh_collision(c)
 
 func _rand_from(arr: Array) -> String:
 	if arr.is_empty():
@@ -154,11 +163,11 @@ func _build_wall_ring() -> void:
 		return
 	var span := HALL_RADIUS
 	for i in range(-span, span + 1):
-		_place(pref, Vector3(i * TILE, 0.0, -span * TILE))
-		_place(pref, Vector3(i * TILE, 0.0, span * TILE), PI)
+		_place(pref, Vector3(i * TILE, 0.0, -span * TILE), 0.0, 1.0, true)
+		_place(pref, Vector3(i * TILE, 0.0, span * TILE), PI, 1.0, true)
 	for i in range(-span + 1, span):
-		_place(pref, Vector3(-span * TILE, 0.0, i * TILE), PI * 0.5)
-		_place(pref, Vector3(span * TILE, 0.0, i * TILE), -PI * 0.5)
+		_place(pref, Vector3(-span * TILE, 0.0, i * TILE), PI * 0.5, 1.0, true)
+		_place(pref, Vector3(span * TILE, 0.0, i * TILE), -PI * 0.5, 1.0, true)
 
 func _build_columns() -> void:
 	var pref := _rand_from(column_tiles)
@@ -167,7 +176,7 @@ func _build_columns() -> void:
 	var span := HALL_RADIUS
 	for sx in [-span, span]:
 		for sz in [-span, span]:
-			_place(pref, Vector3(sx * TILE, 0.0, sz * TILE))
+			_place(pref, Vector3(sx * TILE, 0.0, sz * TILE), 0.0, 1.0, true)
 
 func _build_torches() -> void:
 	var pref := _rand_from(torch_tiles)
@@ -203,7 +212,7 @@ func _scatter_props() -> void:
 		var z := (randi() % (HALL_RADIUS * 2 - 1) - (HALL_RADIUS - 1)) * TILE
 		if abs(x) < TILE and abs(z) < TILE:
 			continue  # не загораживать спавн игрока
-		_place(_rand_from(prop_tiles), Vector3(x, 0.0, z), randf() * PI * 2.0)
+		_place(_rand_from(prop_tiles), Vector3(x, 0.0, z), randf() * PI * 2.0, 1.0, true)
 		placed += 1
 
 # ---------- разрушаемые цели (тест боя) ----------
@@ -226,7 +235,8 @@ func _spawn_dummies() -> void:
 	]
 	for s in spots:
 		var rb := RigidBody3D.new()
-		rb.global_position = s
+		# локальная позиция (до add_child) — не вызывает предупреждения global_transform
+		rb.position = s
 		var col := CollisionShape3D.new()
 		var box := BoxShape3D.new()
 		box.size = Vector3(0.9, 1.1, 0.9)

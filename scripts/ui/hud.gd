@@ -13,6 +13,14 @@ func _ready() -> void:
 	EventBus.player_hp_changed.connect(_on_hp)
 	EventBus.player_mana_changed.connect(_on_mana)
 	EventBus.player_stamina_changed.connect(_on_stamina)
+	# HUD не должен перехватывать мышь — иначе не работает обзор от первого лица
+	_set_mouse_ignore(self)
+
+func _set_mouse_ignore(n: Node) -> void:
+	if n is Control:
+		(n as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for c in n.get_children():
+		_set_mouse_ignore(c)
 
 func _process(_delta: float) -> void:
 	if player == null:

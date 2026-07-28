@@ -165,13 +165,11 @@ func _physics_process(delta: float) -> void:
 		stamina = max(0.0, stamina - 20.0 * delta)
 	elif Input.is_action_pressed("crouch"):
 		speed = crouch_speed
-	if input_dir.length() > 0.1:
-		var target := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized() * speed
-		velocity.x = target.x
-		velocity.z = target.z
-	else:
-		velocity.x = move_toward(velocity.x, 0.0, walk_speed * 6.0 * delta)
-		velocity.z = move_toward(velocity.z, 0.0, walk_speed * 6.0 * delta)
+	# Плавное (frame-rate независимое) ускорение/торможение по горизонтали
+	var target := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized() * speed
+	var smoothing: float = 1.0 - exp(-12.0 * delta)
+	velocity.x = lerpf(velocity.x, target.x, smoothing)
+	velocity.z = lerpf(velocity.z, target.z, smoothing)
 	move_and_slide()
 	# Луч: трата маны + урон
 	if _beam_active:
