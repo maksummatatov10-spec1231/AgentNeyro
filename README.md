@@ -1,40 +1,38 @@
-# 🎮 AgentNeyro
+# 🎮 EMBERFALL — Dungeon Escape
 
-3D-игра на **Godot 4.7.1** (ветка `arena/019fa7ee-agentneyro`).
+3D action-FPS на **Godot 4.7.1**. Герой спавнится в подземелье, пробивается через орды
+скелетов и ловушки (меч + магия: снаряды/луч/AoE), находит ключ, открывает гейт и выходит
+наружу, где его встречают друзья. **Вид от первого лица, управление WASD**, большое меню
+графики **Low → Ultra** («шедевральная» картинка на Ultra).
 
-Сборка на модульных ассет-паках: подземелье, город, 6 классов героев, скелеты-враги,
-анимации боя/магии/паркура и Godot-native VFX. Жанр уточняется — см. идеи ниже.
+> Статус: **дизайн полностью продуман и задокументирован** → переход к производству.
 
 ---
 
-## 📚 Документация анализа ассетов (в `docs/`)
-- **[`ASSETS_MASTER_ANALYSIS.md`](docs/ASSETS_MASTER_ANALYSIS.md)** — мастер-паспорт всех 7 наборов,
-  технические правила (риги, текстуры, масштаб), структура проекта. **Читать первым.**
-- **[`VFX_ANALYSIS.md`](docs/VFX_ANALYSIS.md)** — 7 VFX-паков (магия/вспышки/взрывы/удары/лучи).
-- **[`ASSETS_FULL_INVENTORY.md`](docs/ASSETS_FULL_INVENTORY.md)** — опись первых 4 наборов.
-- **[`GODOT_2026_BRIEFING.md`](docs/GODOT_2026_BRIEFING.md)** — актуальное состояние Godot (4.7.1),
-  breaking changes, актуальные шаблоны API.
-- **[`GAME_IDEAS_50.md`](docs/GAME_IDEAS_50.md)** — 50 идей игры под набор ассетов.
+## 📐 Дизайн-документация (`docs/design/`)
+Полная документация на высшем уровне — читать по порядку:
+- **[`00_GDD.md`](docs/design/00_GDD.md)** — мастер-дизайн (концепт, core loop, игрок, враги, ловушки, уровень, UI, звук)
+- **[`01_COMBAT_AND_ABILITIES.md`](docs/design/01_COMBAT_AND_ABILITIES.md)** — бой: меч, магия (болт/луч/AoE/хил/дэш), реакции урона врага и игрока
+- **[`02_GRAPHICS_TIERS.md`](docs/design/02_GRAPHICS_TIERS.md)** — меню графики Low→Ultra (~30 параметров)
+- **[`03_TECHNICAL_ARCHITECTURE.md`](docs/design/03_TECHNICAL_ARCHITECTURE.md)** — автозагрузки, сцены, скрипты, потоки данных
+- **[`04_ASSET_MAPPING.md`](docs/design/04_ASSET_MAPPING.md)** — маппинг ассет→роль (риги, текстуры, VFX)
+- **[`05_CONTROLS.md`](docs/design/05_CONTROLS.md)** — управление
 
-## 📦 Состав ассетов (кратко)
-| Категория | Что есть |
-|---|---|
-| 🏰 Окружение | KayKit Dungeon (211 тайлов), Modular City (41 тайл) |
-| 🦸 Персонажи (игроки) | 6 классов: Barbarian, Knight, Mage, Ranger, Rogue, Rogue_Hooded (риг Rig_Medium) |
-| 💀 Враги | 4 скелета: Mage, Minion, Rogue, Warrior (риг Rig_Medium, +состояния поломки) |
-| 🏃 Анимации | KayKit Rig_Medium (26) + Quaternius UAL (86, CC0) |
-| ⚔️ Предметы | 31 (герои) + 13 (скелеты): мечи/топоры/луки/арбалеты/посохи/щиты/магия |
-| ✨ VFX | 59 Godot-native эффектов (CC0, Binbun3D) |
+## 📚 Анализ ассетов (`docs/`)
+- **[`ASSETS_MASTER_ANALYSIS.md`](docs/ASSETS_MASTER_ANALYSIS.md)** — мастер-паспорт всех 7 наборов (риги/текстуры/форматы)
+- **[`VFX_ANALYSIS.md`](docs/VFX_ANALYSIS.md)** — 7 Godot-native VFX-паков
+- **[`GODOT_2026_BRIEFING.md`](docs/GODOT_2026_BRIEFING.md)** — актуальное состояние Godot 4.7.1
+- **[`GAME_IDEAS_50.md`](docs/GAME_IDEAS_50.md)** — 50 идей (выбрана № — Dungeon Escape)
 
-## ⚠️ Важно (из анализа)
-- **Два несовместимых рига:** KayKit Rig_Medium (23 кости) vs Quaternius Mixamo (67 костей).
-  KayKit-героев анимировать родными Rig_Medium-анимациями; UAL — отдельно/через ретаргетинг.
-- Все текстуры — **1024×1024 RGBA**.
-- FBX-окружение — статика (без рига); в FBX текстура прописана абсолютным путём → общий материал.
+## 🎯 Ключевое
+- **Два рига:** KayKit Rig_Medium (23 кости, герои+скелеты) и Quaternius Mixamo (67 костей, UAL).
+  В игре KayKit-персонажей анимируем родными Rig_Medium-анимациями.
+- **Способности:** меч (лёгкое комбо + тяжёлый), магический болт (шары из VFX), луч, огненный AoE, исцеление, рывок.
+- **Реакции урона:** враг — flash + Hit_A/B + HitFX + смерть Death_A/dissolve; игрок — vignette + тряска + искры.
+- Все текстуры 1024² RGBA; окружение статичное; FBX-текстуры подключаем через общие материалы.
 
 ## 🛠️ Стек
-- **Движок:** Godot 4.7.1 (target). Физика Jolt (дефолт с 4.7), импорт FBX через ufbx, GLB напрямую.
-- **Язык:** GDScript (на старте).
+Godot 4.7.1 · GDScript · Jolt physics (дефолт 4.7) · ufbx (FBX) + GLB · CC0/FREE ассеты.
 
 ---
-*Статус: анализ ассетов завершён. Игра в проектировании.*
+*Документация готова. Далее — сборка игры и ZIP-архив рядом с README.*
