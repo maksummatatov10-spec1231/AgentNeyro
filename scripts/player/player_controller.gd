@@ -34,8 +34,9 @@ const HEAL_COST := 30.0
 const HEAL_AMOUNT := 35.0
 const HEAL_CD := 8.0
 const DASH_COST := 15.0
-const DASH_DIST := 6.0
 const DASH_CD := 2.0
+const DASH_SPEED := 22.0
+const DASH_TIME := 0.18
 const LIGHT_DMG := 18.0
 const HEAVY_DMG := 35.0
 
@@ -54,6 +55,9 @@ var _cd_aoe: float = 0.0
 var _cd_heal: float = 0.0
 var _cd_dash: float = 0.0
 var _cd_melee: float = 0.0
+var _dashing: bool = false
+var _dash_timer: float = 0.0
+var _dash_dir: Vector3 = Vector3.ZERO
 const MELEE_CD := 0.5
 var _melee_active: bool = false
 var _melee_hits: Array = []
@@ -165,6 +169,17 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= _gravity * gravity_factor * delta
 	if Input.is_action_just_pressed("jump") and is_on_floor():
 		velocity.y = jump_velocity
+	# Рывок: быстрое движение (с коллизией → толкает бочки), не телепорт
+	if _dashing:
+		velocity = _dash_dir * DASH_SPEED
+		_dash_timer -= delta
+		if _dash_timer <= 0.0:
+			_dashing = false
+		move_and_slide()
+		_push_rigidbodies()
+		if _beam_active:
+			_process_beam(delta)
+		return
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var speed := walk_speed
 	if Input.is_action_pressed("sprint") and stamina > 0.0:
@@ -178,16 +193,17 @@ func _physics_process(delta: float) -> void:
 	velocity.x = lerpf(velocity.x, target.x, smoothing)
 	velocity.z = lerpf(velocity.z, target.z, smoothing)
 	move_and_slide()
-	# Толкаем RigidBody3D (например, бочки) при столкновении телом
+	_push_rigidbodies()
+	if _beam_active:
+		_process_beam(delta)
+
+func _push_rigidbodies() -> void:
 	for i in get_slide_collision_count():
 		var c = get_slide_collision(i)
 		var collider = c.get_collider()
 		if collider is RigidBody3D:
 			var push_dir: Vector3 = -c.get_normal()
 			(collider as RigidBody3D).apply_central_impulse(push_dir * 3.0)
-	# Луч: трата маны + урон
-	if _beam_active:
-		_process_beam(delta)
 
 # ---------------- СПОСОБНОСТИ ----------------
 func _melee_light() -> void:
@@ -249,8 +265,9 @@ func _process_beam(delta: float) -> void:
 		beam_visual.visible = false
 		return
 	mana -= cost
+	var fwd := -camera.global_transform.basis.z
 	var from := camera.global_position
-	var to := from - camera.global_transform.basis.z * BEAM_RANGE
+	var to := from + fwd * BEAM_RANGE
 	var query := PhysicsRayQueryParameters3D.create(from, to)
 	query.exclude = [self]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
@@ -260,9 +277,10 @@ func _process_beam(delta: float) -> void:
 		var col = hit.get("collider")
 		if col and col.has_method("take_damage"):
 			col.take_damage(BEAM_DMG_PER_SEC * delta, from)
-	# Визуал луча
-	var mid := (from + end_pos) * 0.5
-	var dist := from.distance_to(end_pos)
+	# Визуал луча (старт чуть впереди камеры, чтобы не clip-ить)
+	var vfrom := from + fwd * 0.6
+	var mid := (vfrom + end_pos) * 0.5
+	var dist := vfrom.distance_to(end_pos)
 	beam_visual.global_position = mid
 	beam_visual.look_at(end_pos)
 	beam_visual.scale.z = dist
@@ -292,7 +310,7 @@ func _heal() -> void:
 	EventBus.ability_cast.emit("heal")
 
 func _dash() -> void:
-	if _cd_dash > 0.0 or not _can_cast(DASH_COST):
+	if _cd_dash > 0.0 or not _can_cast(DASH_COST) or _dashing:
 		return
 	mana -= DASH_COST
 	_cd_dash = DASH_CD
@@ -302,15 +320,12 @@ func _dash() -> void:
 		dir = (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	else:
 		dir = -global_transform.basis.z
-	# Безопасный телепорт с проверкой столкновения
-	var dest := global_position + dir * DASH_DIST
-	var query := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP, dest + Vector3.UP, 0xFFFFFFFF, [self])
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if hit and hit.has("position"):
-		dest = hit["position"] - dir * 0.6
-	global_position = dest
+	# Рывок = быстрое движение по направлению (с коллизией → бочка отлетит)
+	_dash_dir = dir
+	_dashing = true
+	_dash_timer = DASH_TIME
 	_invuln = true
-	_invuln_t = 0.25
+	_invuln_t = DASH_TIME + 0.1
 	_spawn_vfx(global_position, Color(0.5, 0.7, 1.0), 0.4)
 	EventBus.ability_cast.emit("dash")
 

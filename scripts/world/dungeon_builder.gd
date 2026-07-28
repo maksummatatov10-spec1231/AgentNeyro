@@ -276,32 +276,47 @@ func _spawn_dummies() -> void:
 		rb.set_script(dmg_script)
 		add_child(rb)
 
-# ---------- враги-скелеты (Этап 3) ----------
+# ---------- враги-скелеты (Этап 3): Миньоны + Воины ----------
 func _spawn_enemies() -> void:
-	var path := "res://assets/characters/skeletons/Skeleton_Minion.glb"
-	if not ResourceLoader.exists(path):
+	var script = load("res://scripts/enemy/skeleton_enemy.gd")
+	# Миньон: быстрый, слабый
+	var minion := {
+		"path": "res://assets/characters/skeletons/Skeleton_Minion.glb",
+		"hp": 40.0, "speed": 2.8, "dmg": 9.0, "range": 1.8,
+	}
+	# Воин: танк, медленный, сильный
+	var warrior := {
+		"path": "res://assets/characters/skeletons/Skeleton_Warrior.glb",
+		"hp": 95.0, "speed": 2.0, "dmg": 16.0, "range": 2.0,
+	}
+	var spots_minion := [Vector3(TILE * 3, 0.0, TILE * 3), Vector3(-TILE * 3, 0.0, -TILE * 3)]
+	var spots_warrior := [Vector3(TILE * 4, 0.0, -TILE * 2), Vector3(-TILE * 4, 0.0, TILE * 2)]
+	for s in spots_minion:
+		_spawn_one_enemy(minion, s, script)
+	for s in spots_warrior:
+		_spawn_one_enemy(warrior, s, script)
+
+func _spawn_one_enemy(d: Dictionary, spot: Vector3, script: Resource) -> void:
+	if not ResourceLoader.exists(d["path"]):
 		return
-	var res = load(path)
+	var res = load(d["path"])
 	if res == null:
 		return
-	var spots := [
-		Vector3(TILE * 3, 0.0, TILE * 3),
-		Vector3(-TILE * 3, 0.0, -TILE * 3),
-		Vector3(TILE * 4, 0.0, -TILE * 2),
-		Vector3(-TILE * 4, 0.0, TILE * 2),
-	]
-	for s in spots:
-		var enemy := CharacterBody3D.new()
-		enemy.position = s
-		var col := CollisionShape3D.new()
-		var cap := CapsuleShape3D.new()
-		cap.radius = 0.4
-		cap.height = 1.6
-		col.shape = cap
-		col.position = Vector3(0, 0.8, 0)
-		enemy.add_child(col)
-		var mesh = res.instantiate()
-		enemy.add_child(mesh)
-		# текстура скелета подложена рядом с GLB → свой материал резолвится
-		enemy.set_script(load("res://scripts/enemy/skeleton_enemy.gd"))
-		add_child(enemy)
+	var enemy := CharacterBody3D.new()
+	enemy.position = spot
+	var col := CollisionShape3D.new()
+	var cap := CapsuleShape3D.new()
+	cap.radius = 0.4
+	cap.height = 1.6
+	col.shape = cap
+	col.position = Vector3(0, 0.8, 0)
+	enemy.add_child(col)
+	var mesh = res.instantiate()
+	enemy.add_child(mesh)
+	enemy.set_script(script)
+	# характеристики типа врага
+	enemy.max_hp = float(d["hp"])
+	enemy.speed = float(d["speed"])
+	enemy.attack_damage = float(d["dmg"])
+	enemy.attack_range = float(d["range"])
+	add_child(enemy)

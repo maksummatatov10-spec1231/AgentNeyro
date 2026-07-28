@@ -11,7 +11,7 @@ height = 1.7
 size = Vector3(1.5, 1.6, 2.6)
 
 [sub_resource type="BoxMesh" id="BeamMesh"]
-size = Vector3(0.13, 0.13, 1)
+size = Vector3(0.22, 0.22, 1)
 
 [node name="Player" type="CharacterBody3D" groups=["player"]]
 script = ExtResource("1_player")

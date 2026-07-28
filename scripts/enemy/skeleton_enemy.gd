@@ -104,7 +104,8 @@ func _physics_process(delta: float) -> void:
 		var dir: Vector3 = to_player.normalized()
 		velocity.x = dir.x * speed
 		velocity.z = dir.z * speed
-		look_at(Vector3(_player.global_position.x, global_position.y, _player.global_position.z), Vector3.UP)
+		# Модель смотрит +Z на игрока (look_at разворачивал -Z — был спиной)
+		rotation.y = atan2(to_player.x, to_player.z)
 		_moving = true
 	else:
 		velocity.x = 0.0
