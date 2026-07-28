@@ -22,7 +22,9 @@ func _ready() -> void:
 	_scan_assets()
 	_build_floor()
 	_build_perimeter_walls()
+	_build_ceiling()
 	_build_partitions()
+	_spawn_doors()
 	_build_columns_grid()
 	_build_torches_grid()
 	_scatter_props()
@@ -78,16 +80,45 @@ func _build_floor() -> void:
 	col.shape = box
 	col.position = Vector3(0, -0.5, 0)
 	body.add_child(col)
-	# Визуал: одна плоскость с тайловой текстурой данжа
-	var mi := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(size, size)
-	mi.mesh = plane
-	var fmat := StandardMaterial3D.new()
-	fmat.albedo_texture = load("res://assets/textures/dungeon_texture.png")
-	fmat.uv1_scale = Vector3(16, 16, 1)
-	mi.material_override = fmat
-	add_child(mi)
+	# Визуал: тайлы через MultiMesh (один draw-call, реалистичный пол)
+	_build_floor_multimesh()
+
+# MultiMesh-пол: сотни тайлов в одном draw-call
+func _build_floor_multimesh() -> void:
+	if floor_tiles.is_empty():
+		return
+	var scn = load(floor_tiles[0])
+	if scn == null:
+		return
+	var tmp = scn.instantiate()
+	var mesh_res = _find_mesh(tmp)
+	tmp.queue_free()
+	if mesh_res == null:
+		return
+	var mmi := MultiMeshInstance3D.new()
+	var mm := MultiMesh.new()
+	mm.mesh = mesh_res
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	var count := (HALL_RADIUS * 2 + 1) * (HALL_RADIUS * 2 + 1)
+	mm.instance_count = count
+	var idx := 0
+	for x in range(-HALL_RADIUS, HALL_RADIUS + 1):
+		for z in range(-HALL_RADIUS, HALL_RADIUS + 1):
+			var t := Transform3D(Basis.IDENTITY, Vector3(x * TILE, 0.0, z * TILE))
+			mm.set_instance_transform(idx, t)
+			idx += 1
+	mmi.multimesh = mm
+	mmi.material_override = material
+	add_child(mmi)
+
+func _find_mesh(n: Node) -> Resource:
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+		return (n as MeshInstance3D).mesh
+	for c in n.get_children():
+		var m: Resource = _find_mesh(c)
+		if m != null:
+			return m
+	return null
 
 # ---------- СТЕНЫ (коробки = точная коллизия) ----------
 func _wall(center: Vector3, sz: Vector3) -> void:
@@ -116,7 +147,19 @@ func _build_perimeter_walls() -> void:
 	_wall(Vector3(-half, h * 0.5, 0), Vector3(t, h, span))
 	_wall(Vector3(half, h * 0.5, 0), Vector3(t, h, span))
 
-# Перегородки-коридоры: частичные стены (оставляют проходы) → лабиринт коридоров
+# Потолок/крыша
+func _build_ceiling() -> void:
+	var size := (HALL_RADIUS * 2 + 1) * TILE
+	var mi := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(size, size)
+	mi.mesh = plane
+	mi.material_override = material
+	mi.rotation = Vector3(PI, 0, 0)  # лицом вниз
+	mi.position = Vector3(0, 4.8, 0)
+	add_child(mi)
+
+# Перегородки-коридоры
 func _build_partitions() -> void:
 	var h := 4.0
 	var t := 0.5
@@ -190,6 +233,57 @@ func _rand_from(arr: Array) -> String:
 	if arr.is_empty():
 		return ""
 	return arr[randi() % arr.size()]
+
+# ---------- двери (открываются при приближении) ----------
+func _spawn_doors() -> void:
+	var dscript = load("res://scripts/world/door.gd")
+	var defs := [
+		{"pos": Vector3(0, 0, -HALL_RADIUS * 0.5 * TILE), "along": "x"},
+		{"pos": Vector3(HALL_RADIUS * 0.4 * TILE, 0, HALL_RADIUS * 0.2 * TILE), "along": "z"},
+		{"pos": Vector3(-HALL_RADIUS * 0.3 * TILE, 0, -HALL_RADIUS * 0.3 * TILE), "along": "x"},
+		{"pos": Vector3(HALL_RADIUS * 0.2 * TILE, 0, HALL_RADIUS * 0.6 * TILE), "along": "x"},
+	]
+	for ddef in defs:
+		_spawn_door(ddef["pos"], ddef["along"], dscript)
+
+func _spawn_door(pos: Vector3, along: String, script: Resource) -> void:
+	var h := 4.2
+	var gap := 2.8
+	var sidew := 4.0
+	if along == "x":
+		_wall(pos + Vector3(gap * 0.5 + sidew * 0.5, h * 0.5, 0), Vector3(sidew, h, 0.5))
+		_wall(pos + Vector3(-(gap * 0.5 + sidew * 0.5), h * 0.5, 0), Vector3(sidew, h, 0.5))
+		_make_door_panel(pos, Vector3(gap, h * 0.92, 0.35), script)
+	else:
+		_wall(pos + Vector3(0, h * 0.5, gap * 0.5 + sidew * 0.5), Vector3(0.5, h, sidew))
+		_wall(pos + Vector3(0, h * 0.5, -(gap * 0.5 + sidew * 0.5)), Vector3(0.5, h, sidew))
+		_make_door_panel(pos, Vector3(0.35, h * 0.92, gap), script)
+
+func _make_door_panel(pos: Vector3, sz: Vector3, script: Resource) -> void:
+	var door := Node3D.new()
+	door.position = pos
+	var panel := StaticBody3D.new()
+	panel.name = "Panel"
+	panel.position = Vector3(0, sz.y * 0.5, 0)
+	var col := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = sz
+	col.shape = box
+	panel.add_child(col)
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = sz
+	mi.mesh = bm
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.4, 0.25, 0.13)
+	m.emission_enabled = true
+	m.emission = Color(0.6, 0.32, 0.1)
+	m.emission_energy_multiplier = 0.5
+	mi.material_override = m
+	panel.add_child(mi)
+	door.add_child(panel)
+	door.set_script(script)
+	add_child(door)
 
 # ---------- колонны (сетка) ----------
 func _build_columns_grid() -> void:

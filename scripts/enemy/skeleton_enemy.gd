@@ -6,6 +6,7 @@ extends CharacterBody3D
 @export var attack_range: float = 1.8
 @export var attack_damage: float = 9.0
 @export var attack_cd: float = 1.1
+@export var aggro_range: float = 13.0  # замечает игрока только в радиусе
 
 var hp: float = 40.0
 var _dead: bool = false
@@ -100,11 +101,15 @@ func _physics_process(delta: float) -> void:
 	to_player.y = 0.0
 	var dist: float = to_player.length()
 	_moving = false
-	if dist > attack_range:
+	if dist > aggro_range:
+		# Ждёт, пока игрок не подойдёт
+		velocity.x = 0.0
+		velocity.z = 0.0
+	elif dist > attack_range:
 		var dir: Vector3 = to_player.normalized()
 		velocity.x = dir.x * speed
 		velocity.z = dir.z * speed
-		# Модель смотрит +Z на игрока (look_at разворачивал -Z — был спиной)
+		# Модель смотрит +Z на игрока
 		rotation.y = atan2(to_player.x, to_player.z)
 		_moving = true
 	else:
