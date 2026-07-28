@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 load_steps=2]
+
+[ext_resource type="Texture2D" path="res://assets/props/swords/c.png" id="1_c"]
+
+[resource]
+albedo_texture = ExtResource("1_c")
+metallic = 0.85
+roughness = 0.35

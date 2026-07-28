@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/aoe_blast.gd" id="1_aoe"]
+
+[sub_resource type="SphereShape3D" id="blast_sphere"]
+radius = 1.0
+
+[sub_resource type="SphereMesh" id="blast_mesh"]
+radius = 1.0
+height = 2.0
+
+[node name="AOEBlast" type="Area3D"]
+script = ExtResource("1_aoe")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("blast_sphere")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("blast_mesh")

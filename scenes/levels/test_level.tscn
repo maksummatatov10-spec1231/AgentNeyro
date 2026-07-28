@@ -1,0 +1,38 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/dungeon_builder.gd" id="1_builder"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="3_hud"]
+
+[sub_resource type="Environment" id="env_main"]
+background_mode = 1
+background_color = Color(0.015, 0.015, 0.025, 1)
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.7
+glow_strength = 1.0
+fog_enabled = true
+fog_light_color = Color(0.04, 0.04, 0.06, 1)
+fog_density = 0.045
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.02
+
+[node name="TestLevel" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 12, 0)
+rotation = Vector3(-0.7, 0.3, 0)
+light_color = Color(0.55, 0.6, 0.78, 1)
+light_energy = 0.25
+shadow_enabled = true
+
+[node name="Dungeon" type="Node3D" parent="."]
+script = ExtResource("1_builder")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
