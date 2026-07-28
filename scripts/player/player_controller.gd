@@ -397,14 +397,15 @@ func _load_viewmodel() -> void:
 		return
 	var inst = res.instantiate()
 	viewmodel.add_child(inst)
-	# НЕ накладываем свой материал — пусть работает PBR-материал меча (color/m/r)
+	# FBX-материал меча битый (Windows temp-путь) → накладываем свой (c.png)
+	_apply_mat(inst)
 	viewmodel.position = Vector3(0.34, -0.40, -0.62)
 	viewmodel.rotation = Vector3(deg_to_rad(-90), deg_to_rad(-20), deg_to_rad(45))
 	viewmodel.scale = Vector3(0.6, 0.6, 0.6)
 
 func _apply_mat(n: Node) -> void:
 	if n is MeshInstance3D:
-		n.material_override = load("res://materials/viewmodel_sword.tres")
+		n.material_override = load("res://materials/sword_material.tres")
 	for c in n.get_children():
 		_apply_mat(c)
 

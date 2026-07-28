@@ -30,14 +30,17 @@ func _ready() -> void:
 
 # ---------- анимация ----------
 func _setup_animation() -> void:
-	var skel = _find_node_of_type(self, "Skeleton3D")
-	if skel == null:
+	# Треки Rig_Medium имеют путь "Rig_Medium/Skeleton3D:bone" относительно
+	# корня GLB. Поэтому root_node AnimationPlayer = РОДИТЕЛЬ узла "Rig_Medium".
+	var rig = _find_node_by_name(self, "Rig_Medium")
+	if rig == null:
 		return
+	var anim_root = rig.get_parent()
 	_anim = AnimationPlayer.new()
 	add_child(_anim)
-	_anim.root_node = _anim.get_path_to(skel)
+	_anim.root_node = _anim.get_path_to(anim_root)
 	# Собираем все анимации Rig_Medium в одну библиотеку "rig"
-	var rig := AnimationLibrary.new()
+	var riglib := AnimationLibrary.new()
 	for path in ANIM_GLB:
 		if not ResourceLoader.exists(path):
 			continue
@@ -50,11 +53,20 @@ func _setup_animation() -> void:
 			for libname in src.get_animation_library_list():
 				var lib = src.get_animation_library(libname)
 				for an in lib.get_animation_list():
-					if an != "RESET" and not rig.has_animation(an):
-						rig.add_animation(an, lib.get_animation(an))
+					if an != "RESET" and not riglib.has_animation(an):
+						riglib.add_animation(an, lib.get_animation(an))
 		inst.queue_free()
-	_anim.add_animation_library("rig", rig)
+	_anim.add_animation_library("rig", riglib)
 	_play("Idle_A")
+
+func _find_node_by_name(n: Node, nm: String) -> Node:
+	if n.name == nm:
+		return n
+	for c in n.get_children():
+		var r = _find_node_by_name(c, nm)
+		if r != null:
+			return r
+	return null
 
 func _play(anim_name: String) -> void:
 	if _anim == null or _dead:
