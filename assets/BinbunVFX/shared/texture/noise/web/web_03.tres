@@ -1,4 +1,4 @@
-[gd_resource type="NoiseTexture2D" load_steps=2 format=3 uid="uid://cweqjr8k2u48g"]
+[gd_resource type="NoiseTexture2D" load_steps=2 format=3]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_g04p3"]
 noise_type = 2

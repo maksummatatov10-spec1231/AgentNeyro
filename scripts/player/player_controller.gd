@@ -372,15 +372,15 @@ func _load_body() -> void:
 		return
 	var body = res.instantiate()
 	add_child(body)
-	# Гарантируем, что меши тела отбрасывают тень
-	_ensure_shadow(body)
+	# Тело на визуальный слой 2, а камера рендерит только слой 1 →
+	# тело не клиппит камеру (нет чёрного экрана), но отбрасывает тень.
+	_set_layer(body, 2)
 
-func _ensure_shadow(n: Node) -> void:
-	if n is MeshInstance3D:
-		# cast_shadow: 1 = ON (рендер + тень). Числом, чтобы не зависеть от имени enum.
-		(n as MeshInstance3D).cast_shadow = 1
+func _set_layer(n: Node, layer: int) -> void:
+	if n is VisualInstance3D:
+		(n as VisualInstance3D).layers = layer
 	for c in n.get_children():
-		_ensure_shadow(c)
+		_set_layer(c, layer)
 
 func _load_viewmodel() -> void:
 	var path := "res://assets/props/sword_1handed.fbx"
