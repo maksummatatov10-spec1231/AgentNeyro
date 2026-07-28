@@ -13,8 +13,7 @@ func _on_play() -> void:
 	GameManager.goto_scene("res://scenes/levels/test_level.tscn")
 
 func _on_settings() -> void:
-	# Меню настроек появится в следующих этапах.
-	print("EMBERFALL: меню настроек — в разработке (этап 2+)")
+	GameManager.goto_scene("res://scenes/ui/settings_menu.tscn")
 
 func _on_quit() -> void:
 	GameManager.quit_game()

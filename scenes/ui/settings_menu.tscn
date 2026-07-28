@@ -1,0 +1,89 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/settings_menu.gd" id="1_sm"]
+
+[node name="SettingsMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_sm")
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.03, 0.03, 0.05, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200
+offset_top = -220
+offset_right = 200
+offset_bottom = 220
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.72, 0.36, 1)
+theme_override_font_sizes/font_size = 42
+text = "Настройки"
+horizontal_alignment = 1
+
+[node name="SensLabel" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+text = "Чувствительность мыши"
+
+[node name="SensSlider" type="HSlider" parent="VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 30)
+min_value = 5.0
+max_value = 50.0
+value = 25.0
+
+[node name="LangLabel" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+text = "Язык"
+
+[node name="LangRow" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="LangEN" type="Button" parent="VBox/LangRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 40)
+text = "English"
+
+[node name="LangRU" type="Button" parent="VBox/LangRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 40)
+text = "Русский"
+
+[node name="ControlsBtn" type="Button" parent="VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 18
+text = "Управление"
+
+[node name="GraphicsBtn" type="Button" parent="VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 18
+text = "Графика"
+
+[node name="Back" type="Button" parent="VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 18
+text = "Назад"

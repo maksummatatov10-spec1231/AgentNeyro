@@ -34,6 +34,7 @@ func _ready() -> void:
 	_spawn_traps_grid()
 	_build_exit_area()
 	GameManager.set_state(GameManager.GameState.PLAYING)
+	GraphicsManager.apply_env_to_scene()
 	EventBus.level_loaded.emit()
 	print("EMBERFALL: огромный данж построен (радиус %d)." % HALL_RADIUS)
 

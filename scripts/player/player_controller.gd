@@ -96,8 +96,9 @@ func release_mouse() -> void:
 # ---------------- ВВОД ----------------
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and _mouse_captured:
-		rotate_y(-event.relative.x * mouse_sensitivity)
-		_pitch = clamp(_pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-88.0), deg_to_rad(88.0))
+		var sens := SettingsManager.mouse_sensitivity
+		rotate_y(-event.relative.x * sens)
+		_pitch = clamp(_pitch - event.relative.y * sens, deg_to_rad(-88.0), deg_to_rad(88.0))
 		head.rotation.x = _pitch
 	elif event.is_action_pressed("pause"):
 		if _mouse_captured:
