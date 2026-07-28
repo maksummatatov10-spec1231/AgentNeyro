@@ -1,0 +1,24 @@
+# --- Godot ---
+.godot/
+*.import
+export_presets.cfg
+export.cfg
+
+# --- Временные распакованные ассеты (анализ; бинарники не в Git) ---
+_analysis/
+assets_download/
+assets/
+_extracted/
+
+# --- OS / редакторы ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Сборки ---
+build/
+*.exe
+*.x86_64
+*.pck
+*.zip
