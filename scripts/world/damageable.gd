@@ -22,13 +22,18 @@ func take_damage(amount: float, source_pos: Vector3) -> void:
 	hp -= amount
 	_flash()
 	_damage_number(amount)
-	# Отбрасывание (сильное — бочка улетает и кувыркается от одного удара)
+	# Отбрасывание — умеренное (бочка откатывается и кувыркается, но не улетает в космос)
 	var dir: Vector3 = global_position - source_pos
 	dir.y = 0.0
 	if dir.length() > 0.001:
 		dir = dir.normalized()
-		apply_impulse(dir * 7.0 + Vector3.UP * 2.6, Vector3.ZERO)
-		apply_torque_impulse(Vector3(randf_range(-3.0, 3.0), randf_range(-3.0, 3.0), randf_range(-3.0, 3.0)))
+		apply_central_impulse(dir * 3.5 + Vector3.UP * 1.1)
+		apply_torque_impulse(Vector3(randf_range(-1.5, 1.5), randf_range(-1.5, 1.5), randf_range(-1.5, 1.5)))
+
+func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	# Ограничение скорости, чтобы физика не «выстреливала» бочку
+	if state.linear_velocity.length() > 14.0:
+		state.linear_velocity = state.linear_velocity.normalized() * 14.0
 	if hp <= 0.0:
 		_die()
 

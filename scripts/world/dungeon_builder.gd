@@ -262,6 +262,9 @@ func _spawn_dummies() -> void:
 		var rb := RigidBody3D.new()
 		# локальная позиция (до add_child) — не вызывает предупреждения global_transform
 		rb.position = s
+		rb.mass = 4.0
+		rb.linear_damp = 1.5
+		rb.angular_damp = 1.5
 		var col := CollisionShape3D.new()
 		var box := BoxShape3D.new()
 		box.size = Vector3(0.9, 1.1, 0.9)

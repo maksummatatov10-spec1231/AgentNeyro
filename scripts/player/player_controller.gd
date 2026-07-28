@@ -53,6 +53,8 @@ var _invuln_t: float = 0.0
 var _cd_aoe: float = 0.0
 var _cd_heal: float = 0.0
 var _cd_dash: float = 0.0
+var _cd_melee: float = 0.0
+const MELEE_CD := 0.5
 var _melee_active: bool = false
 var _melee_hits: Array = []
 var _beam_active: bool = false
@@ -68,9 +70,9 @@ var _shake: float = 0.0
 const VFX_BURST: PackedScene = preload("res://scenes/world/vfx_burst.tscn")
 const PROJECTILE: PackedScene = preload("res://scenes/world/projectile.tscn")
 const AOE_BLAST: PackedScene = preload("res://scenes/world/aoe_blast.tscn")
-# Качественные боевые VFX (BattleFX, Binbun3D, CC0)
-const BFX_SWING: String = "res://assets/BinbunVFX_Vol2/BattleFX/effects/swing/vfx_blank_swing.tscn"
-const BFX_SLASH: String = "res://assets/BinbunVFX_Vol2/BattleFX/effects/slash/vfx_blank_slash.tscn"
+# Качественные боевые VFX (BattleFX, Binbun3D, CC0) — preload чтобы не было зависаний
+const BFX_SWING: PackedScene = preload("res://assets/BinbunVFX_Vol2/BattleFX/effects/swing/vfx_blank_swing.tscn")
+const BFX_SLASH: PackedScene = preload("res://assets/BinbunVFX_Vol2/BattleFX/effects/slash/vfx_blank_slash.tscn")
 
 func _ready() -> void:
 	hp = max_hp
@@ -110,6 +112,7 @@ func _process(delta: float) -> void:
 	_cd_aoe = max(0.0, _cd_aoe - delta)
 	_cd_heal = max(0.0, _cd_heal - delta)
 	_cd_dash = max(0.0, _cd_dash - delta)
+	_cd_melee = max(0.0, _cd_melee - delta)
 	# Реген маны и выносливости
 	mana = min(max_mana, mana + mana_regen * delta)
 	stamina = min(max_stamina, stamina + stamina_regen * delta)
@@ -133,9 +136,9 @@ func _process(delta: float) -> void:
 	_emit_stats()
 
 func _handle_abilities() -> void:
-	if Input.is_action_just_pressed("attack_light"):
+	if Input.is_action_just_pressed("attack_light") and _cd_melee <= 0.0:
 		_melee_light()
-	if Input.is_action_just_pressed("attack_heavy"):
+	if Input.is_action_just_pressed("attack_heavy") and _cd_melee <= 0.0:
 		_melee_heavy()
 	if Input.is_action_just_pressed("cast_bolt"):
 		_cast_bolt()
@@ -181,13 +184,14 @@ func _physics_process(delta: float) -> void:
 		var collider = c.get_collider()
 		if collider is RigidBody3D:
 			var push_dir: Vector3 = -c.get_normal()
-			(collider as RigidBody3D).apply_impulse(push_dir * 5.0, c.get_position() - collider.global_position)
+			(collider as RigidBody3D).apply_central_impulse(push_dir * 3.0)
 	# Луч: трата маны + урон
 	if _beam_active:
 		_process_beam(delta)
 
 # ---------------- СПОСОБНОСТИ ----------------
 func _melee_light() -> void:
+	_cd_melee = MELEE_CD
 	_start_swing(LIGHT_DMG, "light")
 	EventBus.ability_cast.emit("sword_light")
 
@@ -195,6 +199,7 @@ func _melee_heavy() -> void:
 	if stamina < 25.0:
 		return
 	stamina -= 25.0
+	_cd_melee = MELEE_CD
 	_start_swing(HEAVY_DMG, "heavy")
 	EventBus.ability_cast.emit("sword_heavy")
 
@@ -341,12 +346,10 @@ func _spawn_vfx(pos: Vector3, color: Color, scale_amt: float) -> void:
 	v.setup(pos, color, scale_amt)
 
 # Качественный боевой эффект (BattleFX) с запасным вариантом (vfx_burst)
-func _spawn_battle_fx(path: String, pos: Vector3, face: Vector3, lifetime: float, fb_color: Color, fb_scale: float) -> void:
+func _spawn_battle_fx(scene: PackedScene, pos: Vector3, face: Vector3, lifetime: float, fb_color: Color, fb_scale: float) -> void:
 	var node: Node = null
-	if ResourceLoader.exists(path):
-		var res = load(path)
-		if res != null:
-			node = res.instantiate()
+	if scene != null:
+		node = scene.instantiate()
 	if node != null:
 		get_tree().current_scene.add_child(node)
 		node.global_position = pos
@@ -424,8 +427,17 @@ func _swing_viewmodel(kind: String) -> void:
 	if viewmodel == null:
 		return
 	var base_rot := Vector3(deg_to_rad(-22), deg_to_rad(34), deg_to_rad(16))
-	var peak := base_rot + Vector3(deg_to_rad(-80), deg_to_rad(12), deg_to_rad(-20))
-	var dur := 0.14 if kind == "light" else 0.22
+	var base_pos := Vector3(0.36, -0.42, -0.72)
+	# 3 фазы: замах назад → рубящий удар вперёд → возврат
+	var wind := base_rot + Vector3(deg_to_rad(35), deg_to_rad(-25), deg_to_rad(15))
+	var strike := base_rot + Vector3(deg_to_rad(-88), deg_to_rad(26), deg_to_rad(-32))
+	var t_wind := 0.06 if kind == "light" else 0.10
+	var t_strike := 0.09 if kind == "light" else 0.14
+	var t_back := 0.18 if kind == "light" else 0.26
 	var tw := create_tween()
-	tw.tween_property(viewmodel, "rotation", peak, dur).set_ease(Tween.EASE_OUT)
-	tw.tween_property(viewmodel, "rotation", base_rot, dur).set_ease(Tween.EASE_IN)
+	tw.tween_property(viewmodel, "rotation", wind, t_wind).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(viewmodel, "position", base_pos + Vector3(0.0, 0.05, 0.10), t_wind)
+	tw.tween_property(viewmodel, "rotation", strike, t_strike).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(viewmodel, "position", base_pos + Vector3(0.0, -0.05, -0.14), t_strike)
+	tw.tween_property(viewmodel, "rotation", base_rot, t_back).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(viewmodel, "position", base_pos, t_back)
