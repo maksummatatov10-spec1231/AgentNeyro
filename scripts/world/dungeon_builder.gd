@@ -25,6 +25,7 @@ func _ready() -> void:
 	_build_columns()
 	_build_torches()
 	_scatter_props()
+	_spawn_dummies()
 	EventBus.level_loaded.emit()
 	print("EMBERFALL: данж построен. пол=%d стен=%d колон=%d факел=%d декор=%d" %
 		[floor_tiles.size(), wall_tiles.size(), column_tiles.size(), torch_tiles.size(), prop_tiles.size()])
@@ -204,3 +205,37 @@ func _scatter_props() -> void:
 			continue  # не загораживать спавн игрока
 		_place(_rand_from(prop_tiles), Vector3(x, 0.0, z), randf() * PI * 2.0)
 		placed += 1
+
+# ---------- разрушаемые цели (тест боя) ----------
+func _spawn_dummies() -> void:
+	var dmg_script = load("res://scripts/world/damageable.gd")
+	var barrel := ""
+	for f in ["barrel_large.fbx", "box_small.fbx", "barrel_small.fbx", "crate.fbx"]:
+		var p := DUNGEON_DIR + "/" + f
+		if ResourceLoader.exists(p):
+			barrel = p
+			break
+	if barrel.is_empty():
+		return
+	var spots := [
+		Vector3(TILE * 2, 0.6, TILE * 2),
+		Vector3(-TILE * 2, 0.6, TILE * 3),
+		Vector3(TILE * 3, 0.6, -TILE * 2),
+		Vector3(0, 0.6, TILE * 4),
+		Vector3(-TILE * 4, 0.6, -TILE * 3),
+	]
+	for s in spots:
+		var rb := RigidBody3D.new()
+		rb.global_position = s
+		var col := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(0.9, 1.1, 0.9)
+		col.shape = box
+		rb.add_child(col)
+		var res = load(barrel)
+		if res:
+			var inst = res.instantiate()
+			rb.add_child(inst)
+			_apply_material_recursive(inst)
+		rb.set_script(dmg_script)
+		add_child(rb)

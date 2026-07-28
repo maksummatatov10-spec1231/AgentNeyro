@@ -15,10 +15,16 @@ const ACTIONS := {
 	"jump": [KEY_SPACE],
 	"sprint": [KEY_SHIFT],
 	"crouch": [KEY_CTRL],
-	"interact": [KEY_E],
+	"interact": [KEY_G],
 	"pause": [KEY_ESCAPE],
-	"attack_light": [-1],   # мышь: добавим программно
-	"cast_bolt": [-2],
+	"attack_light": [-1],   # ЛКМ
+	"cast_bolt": [-2],      # ПКМ
+	"attack_heavy": [KEY_R],
+	"cast_beam": [KEY_F],
+	"cast_aoe": [KEY_Q],
+	"heal": [KEY_H],
+	"dash": [KEY_E],
+	"test_self_damage": [KEY_T],  # отладка: показать реакцию урона игрока
 }
 
 func _ready() -> void:

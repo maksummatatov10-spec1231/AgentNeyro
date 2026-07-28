@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/world/dungeon_builder.gd" id="1_builder"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="3_hud"]
 
 [sub_resource type="Environment" id="env_main"]
 background_mode = 1
@@ -15,7 +16,6 @@ fog_light_color = Color(0.04, 0.04, 0.06, 1)
 fog_density = 0.045
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.02
-volumetric_fog_emissive = 0.0
 
 [node name="TestLevel" type="Node3D"]
 
@@ -35,27 +35,4 @@ script = ExtResource("1_builder")
 [node name="Player" parent="." instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
 
-[node name="HUD" type="CanvasLayer" parent="."]
-
-[node name="Crosshair" type="ColorRect" parent="HUD"]
-offset_left = -3.0
-offset_top = -3.0
-offset_right = 3.0
-offset_bottom = 3.0
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-color = Color(1, 1, 1, 0.7)
-
-[node name="Hint" type="Label" parent="HUD"]
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -36.0
-theme_override_colors/font_color = Color(0.7, 0.7, 0.72, 1)
-theme_override_font_sizes/font_size = 14
-text = "WASD — движение • Мышь — обзор • Space — прыжок • Shift — бег • Esc — курсор"
-horizontal_alignment = 1
+[node name="HUD" parent="." instance=ExtResource("3_hud")]

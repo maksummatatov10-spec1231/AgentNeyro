@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/vfx_burst.gd" id="1_burst"]
+
+[sub_resource type="SphereMesh" id="vfx_mesh"]
+radius = 0.2
+height = 0.4
+
+[node name="VFXBurst" type="Node3D"]
+script = ExtResource("1_burst")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("vfx_mesh")
+
+[node name="Light" type="OmniLight3D" parent="."]
+light_energy = 2.0
+omni_range = 10.0

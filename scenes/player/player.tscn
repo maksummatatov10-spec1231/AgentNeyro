@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_player"]
 
@@ -6,7 +6,13 @@
 radius = 0.4
 height = 1.7
 
-[node name="Player" type="CharacterBody3D"]
+[sub_resource type="BoxShape3D" id="MeleeShape"]
+size = Vector3(1.5, 1.6, 2.6)
+
+[sub_resource type="BoxMesh" id="BeamMesh"]
+size = Vector3(0.13, 0.13, 1)
+
+[node name="Player" type="CharacterBody3D" groups=["player"]]
 script = ExtResource("1_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
@@ -20,5 +26,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 fov = 90.0
 
 [node name="InteractionRay" type="RayCast3D" parent="Head"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
-target_position = Vector3(0, 0, -2.5)
+target_position = Vector3(0, 0, -3)
+
+[node name="ViewModel" type="Node3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.32, -0.28, -0.55)
+
+[node name="MeleeArea" type="Area3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.6)
+monitoring = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Head/MeleeArea"]
+shape = SubResource("MeleeShape")
+
+[node name="BeamVisual" type="MeshInstance3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+mesh = SubResource("BeamMesh")
+visible = false
