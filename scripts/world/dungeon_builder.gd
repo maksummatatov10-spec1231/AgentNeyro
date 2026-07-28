@@ -26,6 +26,7 @@ func _ready() -> void:
 	_build_torches()
 	_scatter_props()
 	_spawn_dummies()
+	_spawn_enemies()
 	EventBus.level_loaded.emit()
 	print("EMBERFALL: данж построен. пол=%d стен=%d колон=%d факел=%d декор=%d" %
 		[floor_tiles.size(), wall_tiles.size(), column_tiles.size(), torch_tiles.size(), prop_tiles.size()])
@@ -60,7 +61,8 @@ func _scan_assets() -> void:
 # ---------- ГАРАНТИРОВАННАЯ геометрия (примитивы) ----------
 func _build_guaranteed_floor() -> void:
 	var size := (HALL_RADIUS * 2 + 1) * TILE
-	# Коллизия пола
+	# Только коллизия пола (один сплошной бокс). Визуальный пол — из соединённых
+	# FBX-тайлов (см. _build_floor_tiles), без дублирующей плоскости → нет мерцания.
 	var body := StaticBody3D.new()
 	add_child(body)
 	var col := CollisionShape3D.new()
@@ -69,14 +71,6 @@ func _build_guaranteed_floor() -> void:
 	col.shape = box
 	col.position = Vector3(0, -0.5, 0)
 	body.add_child(col)
-	# Визуальный пол (плоскость с текстурой данжа)
-	var mi := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(size, size)
-	mi.mesh = plane
-	mi.material_override = material
-	mi.position = Vector3(0, 0.0, 0)
-	add_child(mi)
 
 func _build_guaranteed_walls() -> void:
 	var span := (HALL_RADIUS * 2 + 1) * TILE
@@ -174,7 +168,7 @@ func _build_floor_tiles() -> void:
 	for x in range(-HALL_RADIUS, HALL_RADIUS + 1):
 		for z in range(-HALL_RADIUS, HALL_RADIUS + 1):
 			var p := _rand_from(floor_tiles)
-			_place(p, Vector3(x * TILE, 0.02, z * TILE), randf() * PI * 0.5)
+			_place(p, Vector3(x * TILE, 0.0, z * TILE), randf() * PI * 0.5)
 
 func _build_wall_ring() -> void:
 	var pref := ""
@@ -263,12 +257,14 @@ func _spawn_dummies() -> void:
 		# локальная позиция (до add_child) — не вызывает предупреждения global_transform
 		rb.position = s
 		rb.mass = 4.0
-		rb.linear_damp = 1.5
-		rb.angular_damp = 1.5
+		rb.linear_damp = 0.6
+		rb.angular_damp = 0.6
+		rb.can_sleep = true
 		var col := CollisionShape3D.new()
-		var box := BoxShape3D.new()
-		box.size = Vector3(0.9, 1.1, 0.9)
-		col.shape = box
+		var cyl := CylinderShape3D.new()
+		cyl.radius = 0.45
+		cyl.height = 1.0
+		col.shape = cyl
 		rb.add_child(col)
 		var res = load(barrel)
 		if res:
@@ -277,3 +273,33 @@ func _spawn_dummies() -> void:
 			_apply_material_recursive(inst)
 		rb.set_script(dmg_script)
 		add_child(rb)
+
+# ---------- враги-скелеты (Этап 3) ----------
+func _spawn_enemies() -> void:
+	var path := "res://assets/characters/skeletons/Skeleton_Minion.glb"
+	if not ResourceLoader.exists(path):
+		return
+	var res = load(path)
+	if res == null:
+		return
+	var spots := [
+		Vector3(TILE * 3, 0.0, TILE * 3),
+		Vector3(-TILE * 3, 0.0, -TILE * 3),
+		Vector3(TILE * 4, 0.0, -TILE * 2),
+		Vector3(-TILE * 4, 0.0, TILE * 2),
+	]
+	for s in spots:
+		var enemy := CharacterBody3D.new()
+		enemy.position = s
+		var col := CollisionShape3D.new()
+		var cap := CapsuleShape3D.new()
+		cap.radius = 0.4
+		cap.height = 1.6
+		col.shape = cap
+		col.position = Vector3(0, 0.8, 0)
+		enemy.add_child(col)
+		var mesh = res.instantiate()
+		enemy.add_child(mesh)
+		# текстура скелета подложена рядом с GLB → свой материал резолвится
+		enemy.set_script(load("res://scripts/enemy/skeleton_enemy.gd"))
+		add_child(enemy)

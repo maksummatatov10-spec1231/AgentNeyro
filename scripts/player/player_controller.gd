@@ -386,10 +386,9 @@ func _set_layer(n: Node, layer: int) -> void:
 		_set_layer(c, layer)
 
 func _load_viewmodel() -> void:
-	var path := "res://assets/props/sword_1handed.fbx"
-	# Ассета может не быть на месте — пробуем загрузить безопасно
+	# Качественный PBR-меч из набора 50Swords
+	var path := "res://assets/props/swords/Sword228.fbx"
 	if not ResourceLoader.exists(path):
-		# попытаемся найти меч среди пропов/ассетов
 		path = _find_first_fbx("sword")
 	if path.is_empty():
 		return
@@ -398,10 +397,10 @@ func _load_viewmodel() -> void:
 		return
 	var inst = res.instantiate()
 	viewmodel.add_child(inst)
-	_apply_mat(inst)
-	viewmodel.position = Vector3(0.36, -0.42, -0.72)
-	viewmodel.rotation = Vector3(deg_to_rad(-22), deg_to_rad(34), deg_to_rad(16))
-	viewmodel.scale = Vector3(0.7, 0.7, 0.7)
+	# НЕ накладываем свой материал — пусть работает PBR-материал меча (color/m/r)
+	viewmodel.position = Vector3(0.34, -0.40, -0.62)
+	viewmodel.rotation = Vector3(deg_to_rad(-90), deg_to_rad(-20), deg_to_rad(45))
+	viewmodel.scale = Vector3(0.6, 0.6, 0.6)
 
 func _apply_mat(n: Node) -> void:
 	if n is MeshInstance3D:
@@ -426,8 +425,8 @@ func _find_first_fbx(prefix: String) -> String:
 func _swing_viewmodel(kind: String) -> void:
 	if viewmodel == null:
 		return
-	var base_rot := Vector3(deg_to_rad(-22), deg_to_rad(34), deg_to_rad(16))
-	var base_pos := Vector3(0.36, -0.42, -0.72)
+	var base_rot := Vector3(deg_to_rad(-90), deg_to_rad(-20), deg_to_rad(45))
+	var base_pos := Vector3(0.34, -0.40, -0.62)
 	# 3 фазы: замах назад → рубящий удар вперёд → возврат
 	var wind := base_rot + Vector3(deg_to_rad(35), deg_to_rad(-25), deg_to_rad(15))
 	var strike := base_rot + Vector3(deg_to_rad(-88), deg_to_rad(26), deg_to_rad(-32))

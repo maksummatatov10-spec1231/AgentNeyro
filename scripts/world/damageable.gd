@@ -27,13 +27,8 @@ func take_damage(amount: float, source_pos: Vector3) -> void:
 	dir.y = 0.0
 	if dir.length() > 0.001:
 		dir = dir.normalized()
-		apply_central_impulse(dir * 3.5 + Vector3.UP * 1.1)
-		apply_torque_impulse(Vector3(randf_range(-1.5, 1.5), randf_range(-1.5, 1.5), randf_range(-1.5, 1.5)))
-
-func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
-	# Ограничение скорости, чтобы физика не «выстреливала» бочку
-	if state.linear_velocity.length() > 14.0:
-		state.linear_velocity = state.linear_velocity.normalized() * 14.0
+		apply_central_impulse(dir * 3.0 + Vector3.UP * 0.8)
+		apply_torque_impulse(Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)))
 	if hp <= 0.0:
 		_die()
 
