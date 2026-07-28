@@ -40,19 +40,19 @@ func _scan_assets() -> void:
 	var fname := dir.get_next()
 	while fname != "":
 		if fname.to_lower().ends_with(".fbx"):
-			var name := fname.get_basename().to_lower()
+			var tile_name := fname.get_basename().to_lower()
 			var path := DUNGEON_DIR + "/" + fname
-			if name.begins_with("floor"):
+			if tile_name.begins_with("floor"):
 				floor_tiles.append(path)
-			elif name.begins_with("wall"):
+			elif tile_name.begins_with("wall"):
 				wall_tiles.append(path)
-			elif name.begins_with("column") or name.begins_with("pillar"):
+			elif tile_name.begins_with("column") or tile_name.begins_with("pillar"):
 				column_tiles.append(path)
-			elif name.begins_with("torch"):
+			elif tile_name.begins_with("torch"):
 				torch_tiles.append(path)
-			elif name.begins_with("barrel") or name.begins_with("box") or name.begins_with("crate") \
-				or name.begins_with("banner") or name.begins_with("chest") or name.begins_with("barrier") \
-				or name.begins_with("rubble") or name.begins_with("barrier"):
+			elif tile_name.begins_with("barrel") or tile_name.begins_with("box") or tile_name.begins_with("crate") \
+				or tile_name.begins_with("banner") or tile_name.begins_with("chest") or tile_name.begins_with("barrier") \
+				or tile_name.begins_with("rubble"):
 				prop_tiles.append(path)
 		fname = dir.get_next()
 	dir.list_dir_end()
@@ -188,7 +188,7 @@ func _add_torch_light(pos: Vector3) -> void:
 	light.position = pos
 	light.light_color = Color(1.0, 0.66, 0.32)
 	light.light_energy = 3.0
-	light.range = 14.0
+	light.omni_range = 14.0
 	light.shadow_enabled = true
 	add_child(light)
 

@@ -300,7 +300,7 @@ func _dash() -> void:
 	EventBus.ability_cast.emit("dash")
 
 # ---------------- УРОН ИГРОКА ----------------
-func take_damage(amount: float, source_pos: Vector3) -> void:
+func take_damage(amount: float, _source_pos: Vector3) -> void:
 	if _invuln or hp <= 0.0:
 		return
 	hp = max(0.0, hp - amount)
