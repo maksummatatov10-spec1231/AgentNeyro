@@ -6,7 +6,8 @@ extends CanvasLayer
 @onready var st_bar: ProgressBar = $BarsPanel/Bars/Stamina
 @onready var cd_label: Label = $CooldownLabel
 
-var player: Node = null
+# Нетипизированная ссылка на игрока (динамический доступ к приватным полям кулдаунов).
+var player = null
 
 func _ready() -> void:
 	EventBus.player_hp_changed.connect(_on_hp)

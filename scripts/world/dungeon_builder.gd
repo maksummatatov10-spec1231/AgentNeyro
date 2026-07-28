@@ -211,7 +211,7 @@ func _spawn_dummies() -> void:
 	var dmg_script = load("res://scripts/world/damageable.gd")
 	var barrel := ""
 	for f in ["barrel_large.fbx", "box_small.fbx", "barrel_small.fbx", "crate.fbx"]:
-		var p := DUNGEON_DIR + "/" + f
+		var p: String = DUNGEON_DIR + "/" + f
 		if ResourceLoader.exists(p):
 			barrel = p
 			break

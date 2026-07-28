@@ -242,7 +242,7 @@ func _process_beam(delta: float) -> void:
 	var end_pos := to
 	if hit and hit.has("position"):
 		end_pos = hit["position"]
-		var col := hit.get("collider")
+		var col = hit.get("collider")
 		if col and col.has_method("take_damage"):
 			col.take_damage(BEAM_DMG_PER_SEC * delta, from)
 	# Визуал луча

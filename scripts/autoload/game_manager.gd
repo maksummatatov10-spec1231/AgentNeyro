@@ -39,13 +39,13 @@ func _ensure_input_actions() -> void:
 		for keycode in ACTIONS[action]:
 			if keycode > 0:
 				var k := InputEventKey.new()
-				k.physical_keycode = keycode
+				k.physical_keycode = keycode as Key
 				InputMap.action_add_event(action, k)
 	# Кнопки мыши
 	_add_mouse_action("attack_light", MOUSE_BUTTON_LEFT)
 	_add_mouse_action("cast_bolt", MOUSE_BUTTON_RIGHT)
 
-func _add_mouse_action(action: String, button_index: int) -> void:
+func _add_mouse_action(action: String, button_index: MouseButton) -> void:
 	var m := InputEventMouseButton.new()
 	m.button_index = button_index
 	InputMap.action_add_event(action, m)
