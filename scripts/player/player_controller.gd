@@ -23,9 +23,6 @@ extends CharacterBody3D
 const BOLT_COST := 12.0
 const BOLT_SPEED := 22.0
 const BOLT_DMG := 25.0
-const BEAM_COST_PER_SEC := 18.0
-const BEAM_DMG_PER_SEC := 26.0
-const BEAM_RANGE := 16.0
 const AOE_COST := 35.0
 const AOE_DMG := 60.0
 const AOE_RADIUS := 4.0
@@ -61,7 +58,6 @@ var _dash_dir: Vector3 = Vector3.ZERO
 const MELEE_CD := 0.5
 var _melee_active: bool = false
 var _melee_hits: Array = []
-var _beam_active: bool = false
 var _shake: float = 0.0
 
 # Ноды
@@ -69,7 +65,6 @@ var _shake: float = 0.0
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var melee_area: Area3D = $Head/MeleeArea
 @onready var viewmodel: Node3D = $Head/ViewModel
-@onready var beam_visual: MeshInstance3D = $Head/BeamVisual
 
 const VFX_BURST: PackedScene = preload("res://scenes/world/vfx_burst.tscn")
 const PROJECTILE: PackedScene = preload("res://scenes/world/projectile.tscn")
@@ -86,7 +81,6 @@ func _ready() -> void:
 	capture_mouse()
 	melee_area.monitoring = false
 	melee_area.body_entered.connect(_on_melee_body_entered)
-	beam_visual.visible = false
 	_load_viewmodel()
 	_load_body()
 	_emit_stats()
@@ -154,14 +148,6 @@ func _handle_abilities() -> void:
 		_dash()
 	if Input.is_action_just_pressed("test_self_damage"):
 		take_damage(18.0, global_position + Vector3.FORWARD)
-	# Луч (удержание)
-	var want_beam := Input.is_action_pressed("cast_beam")
-	if want_beam and mana > 0.0:
-		if not _beam_active:
-			_beam_active = true
-	elif not want_beam:
-		_beam_active = false
-		beam_visual.visible = false
 
 # ---------------- ФИЗИКА ----------------
 func _physics_process(delta: float) -> void:
@@ -177,8 +163,6 @@ func _physics_process(delta: float) -> void:
 			_dashing = false
 		move_and_slide()
 		_push_rigidbodies()
-		if _beam_active:
-			_process_beam(delta)
 		return
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var speed := walk_speed
@@ -194,8 +178,6 @@ func _physics_process(delta: float) -> void:
 	velocity.z = lerpf(velocity.z, target.z, smoothing)
 	move_and_slide()
 	_push_rigidbodies()
-	if _beam_active:
-		_process_beam(delta)
 
 func _push_rigidbodies() -> void:
 	for i in get_slide_collision_count():
@@ -258,34 +240,6 @@ func _cast_bolt() -> void:
 	p.setup(-head.global_transform.basis.z * BOLT_SPEED, BOLT_DMG, self)
 	EventBus.ability_cast.emit("magic_bolt")
 
-func _process_beam(delta: float) -> void:
-	var cost := BEAM_COST_PER_SEC * delta
-	if mana < cost:
-		_beam_active = false
-		beam_visual.visible = false
-		return
-	mana -= cost
-	var fwd := -camera.global_transform.basis.z
-	var from := camera.global_position
-	var to := from + fwd * BEAM_RANGE
-	var query := PhysicsRayQueryParameters3D.create(from, to)
-	query.exclude = [self]
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	var end_pos := to
-	if hit and hit.has("position"):
-		end_pos = hit["position"]
-		var col = hit.get("collider")
-		if col and col.has_method("take_damage"):
-			col.take_damage(BEAM_DMG_PER_SEC * delta, from)
-	# Визуал луча (старт чуть впереди камеры, чтобы не clip-ить)
-	var vfrom := from + fwd * 0.6
-	var mid := (vfrom + end_pos) * 0.5
-	var dist := vfrom.distance_to(end_pos)
-	beam_visual.global_position = mid
-	beam_visual.look_at(end_pos)
-	beam_visual.scale.z = dist
-	beam_visual.visible = true
-
 func _cast_aoe() -> void:
 	if _cd_aoe > 0.0 or not _can_cast(AOE_COST):
 		return
@@ -340,6 +294,7 @@ func take_damage(amount: float, _source_pos: Vector3) -> void:
 	_spawn_vfx(head.global_position, Color(1.0, 0.2, 0.2), 0.4)
 	if hp <= 0.0:
 		EventBus.player_died.emit()
+		GameManager.lose_game()
 
 # ---------------- ХЕЛПЕРЫ ----------------
 func _can_cast(cost: float) -> bool:

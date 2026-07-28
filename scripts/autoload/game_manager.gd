@@ -61,5 +61,23 @@ func goto_main_menu() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
+func win_game() -> void:
+	if state == GameState.WIN or state == GameState.LOSE:
+		return
+	set_state(GameState.WIN)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	get_tree().change_scene_to_file("res://scenes/ui/win_screen.tscn")
+
+func lose_game() -> void:
+	if state == GameState.WIN or state == GameState.LOSE:
+		return
+	set_state(GameState.LOSE)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	get_tree().change_scene_to_file("res://scenes/ui/death_screen.tscn")
+
+func restart_level() -> void:
+	set_state(GameState.PLAYING)
+	get_tree().change_scene_to_file("res://scenes/levels/test_level.tscn")
+
 func quit_game() -> void:
 	get_tree().quit()

@@ -27,6 +27,9 @@ func _ready() -> void:
 	_scatter_props()
 	_spawn_dummies()
 	_spawn_enemies()
+	_spawn_traps()
+	_spawn_exit()
+	GameManager.set_state(GameManager.GameState.PLAYING)
 	EventBus.level_loaded.emit()
 	print("EMBERFALL: данж построен. пол=%d стен=%d колон=%d факел=%d декор=%d" %
 		[floor_tiles.size(), wall_tiles.size(), column_tiles.size(), torch_tiles.size(), prop_tiles.size()])
@@ -320,3 +323,75 @@ func _spawn_one_enemy(d: Dictionary, spot: Vector3, script: Resource) -> void:
 	enemy.attack_damage = float(d["dmg"])
 	enemy.attack_range = float(d["range"])
 	add_child(enemy)
+
+# ---------- ловушки-шипы (Этап 4) ----------
+func _spawn_traps() -> void:
+	var script = load("res://scripts/world/spike_trap.gd")
+	var spots := [
+		Vector3(TILE, 0.06, TILE * 2),
+		Vector3(-TILE * 2, 0.06, -TILE * 2),
+		Vector3(TILE * 2, 0.06, -TILE),
+	]
+	for s in spots:
+		var trap := Area3D.new()
+		trap.position = s
+		var col := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(1.5, 1.0, 1.5)
+		col.position = Vector3(0, 0.5, 0)
+		col.shape = box
+		trap.add_child(col)
+		trap.set_script(script)
+		add_child(trap)
+
+# ---------- выход + друзья (Этап 4) ----------
+func _spawn_exit() -> void:
+	var pos := Vector3(0.0, 0.0, -(HALL_RADIUS - 1) * TILE)
+	# Светящийся портал-выход
+	var portal := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.radius = 1.4
+	cyl.height = 3.0
+	portal.mesh = cyl
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.4, 1.0, 0.7)
+	m.emission_enabled = true
+	m.emission = Color(0.4, 1.0, 0.7)
+	m.emission_energy_multiplier = 3.0
+	portal.material_override = m
+	portal.position = pos + Vector3(0, 1.5, 0)
+	add_child(portal)
+	var light := OmniLight3D.new()
+	light.position = pos + Vector3(0, 2.0, 0)
+	light.light_color = Color(0.4, 1.0, 0.7)
+	light.light_energy = 4.0
+	light.omni_range = 14.0
+	add_child(light)
+	# Зона-триггер победы
+	var zone := Area3D.new()
+	zone.position = pos + Vector3(0, 1.0, 0)
+	var col := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(2.8, 3.0, 2.0)
+	col.shape = box
+	zone.add_child(col)
+	zone.set_script(load("res://scripts/world/exit_zone.gd"))
+	add_child(zone)
+	_spawn_friends(pos)
+
+func _spawn_friends(exit_pos: Vector3) -> void:
+	# Друзья-авантюристы у выхода (статичны; анимация Idle — позже)
+	var files := ["Knight.glb", "Mage.glb", "Ranger.glb"]
+	var i := 0
+	for fn in files:
+		var p: String = "res://assets/characters/adventurers/" + fn
+		if not ResourceLoader.exists(p):
+			continue
+		var res = load(p)
+		if res == null:
+			continue
+		var fr = res.instantiate()
+		fr.position = exit_pos + Vector3((i - 1) * 1.2, 0.0, 1.8)
+		fr.rotation.y = PI  # лицом к игроку (к центру)
+		add_child(fr)
+		i += 1
