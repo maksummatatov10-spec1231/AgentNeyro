@@ -65,9 +65,9 @@ var _shake: float = 0.0
 @onready var viewmodel: Node3D = $Head/ViewModel
 @onready var beam_visual: MeshInstance3D = $Head/BeamVisual
 
-const VFX_BURST := preload("res://scenes/world/vfx_burst.tscn")
-const PROJECTILE := preload("res://scenes/world/projectile.tscn")
-const AOE_BLAST := preload("res://scenes/world/aoe_blast.tscn")
+const VFX_BURST: PackedScene = preload("res://scenes/world/vfx_burst.tscn")
+const PROJECTILE: PackedScene = preload("res://scenes/world/projectile.tscn")
+const AOE_BLAST: PackedScene = preload("res://scenes/world/aoe_blast.tscn")
 
 func _ready() -> void:
 	hp = max_hp
@@ -220,7 +220,7 @@ func _cast_bolt() -> void:
 	if not _can_cast(BOLT_COST):
 		return
 	mana -= BOLT_COST
-	var p := PROJECTILE.instantiate()
+	var p = PROJECTILE.instantiate()
 	var root := get_tree().current_scene
 	root.add_child(p)
 	p.global_position = head.global_position + head.global_transform.basis.z * -0.6
@@ -259,7 +259,7 @@ func _cast_aoe() -> void:
 	mana -= AOE_COST
 	_cd_aoe = AOE_CD
 	var target := _aim_point(AOE_RADIUS * 0.9 + 6.0)
-	var blast := AOE_BLAST.instantiate()
+	var blast = AOE_BLAST.instantiate()
 	get_tree().current_scene.add_child(blast)
 	blast.setup(target, AOE_RADIUS, AOE_DMG, self)
 	_spawn_vfx(target, Color(1.0, 0.45, 0.1), 1.0)
@@ -326,7 +326,7 @@ func _aim_point(max_dist: float) -> Vector3:
 	return to
 
 func _spawn_vfx(pos: Vector3, color: Color, scale_amt: float) -> void:
-	var v := VFX_BURST.instantiate()
+	var v = VFX_BURST.instantiate()
 	get_tree().current_scene.add_child(v)
 	v.setup(pos, color, scale_amt)
 

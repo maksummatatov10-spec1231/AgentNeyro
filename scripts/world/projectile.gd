@@ -9,7 +9,7 @@ var _life := 3.0
 @onready var mesh: MeshInstance3D = $Mesh
 @onready var light: OmniLight3D = $Light
 
-const VFX := preload("res://scenes/world/vfx_burst.tscn")
+const VFX: PackedScene = preload("res://scenes/world/vfx_burst.tscn")
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -36,7 +36,7 @@ func _on_body_entered(body: Node) -> void:
 	_burst()
 
 func _burst() -> void:
-	var v := VFX.instantiate()
+	var v = VFX.instantiate()
 	get_tree().current_scene.add_child(v)
 	v.setup(global_position, Color(0.4, 0.65, 1.0), 0.55)
 	queue_free()

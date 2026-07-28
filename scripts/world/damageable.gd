@@ -9,7 +9,7 @@ var _spawn_pos: Vector3 = Vector3.ZERO
 var _spawn_rot: Basis = Basis.IDENTITY
 @onready var _meshes: Array = _collect_meshes(self)
 
-const VFX := preload("res://scenes/world/vfx_burst.tscn")
+const VFX: PackedScene = preload("res://scenes/world/vfx_burst.tscn")
 
 func _ready() -> void:
 	hp = max_hp
@@ -62,7 +62,7 @@ func _damage_number(amount: float) -> void:
 	tw.tween_callback(l.queue_free)
 
 func _die() -> void:
-	var v := VFX.instantiate()
+	var v = VFX.instantiate()
 	get_tree().current_scene.add_child(v)
 	v.setup(global_position + Vector3.UP * 0.6, Color(0.8, 0.3, 1.0), 0.9)
 	freeze = true
