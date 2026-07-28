@@ -41,7 +41,7 @@ func _physics_process(delta: float) -> void:
 	global_position += _velocity * delta
 	# Ориентируем VFX по направлению полёта
 	if _vfx != null and _velocity.length() > 0.1:
-		var t := _vfx.global_transform
+		var t: Transform3D = _vfx.global_transform
 		t.basis = Basis.looking_at(_velocity.normalized(), Vector3.UP)
 		_vfx.global_transform = t
 	_life -= delta

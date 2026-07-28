@@ -68,6 +68,9 @@ var _shake: float = 0.0
 const VFX_BURST: PackedScene = preload("res://scenes/world/vfx_burst.tscn")
 const PROJECTILE: PackedScene = preload("res://scenes/world/projectile.tscn")
 const AOE_BLAST: PackedScene = preload("res://scenes/world/aoe_blast.tscn")
+# Качественные боевые VFX (BattleFX, Binbun3D, CC0)
+const BFX_SWING: String = "res://assets/BinbunVFX_Vol2/BattleFX/effects/swing/vfx_blank_swing.tscn"
+const BFX_SLASH: String = "res://assets/BinbunVFX_Vol2/BattleFX/effects/slash/vfx_blank_slash.tscn"
 
 func _ready() -> void:
 	hp = max_hp
@@ -203,6 +206,7 @@ func _start_swing(dmg: float, kind: String) -> void:
 	melee_area.monitoring = true
 	# Визуал замаха клинка
 	_swing_viewmodel(kind)
+	_spawn_battle_fx(BFX_SWING, melee_area.global_position, -head.global_transform.basis.z, 0.4, Color(1.0, 0.95, 0.6), 0.4)
 	# Окно хита
 	await get_tree().create_timer(0.18).timeout
 	melee_area.monitoring = false
@@ -219,7 +223,7 @@ func _on_melee_body_entered(body: Node) -> void:
 	if body.has_method("take_damage"):
 		var hit_pos: Vector3 = (body as Node3D).global_position
 		body.take_damage(_melee_dmg, head.global_position)
-		_spawn_vfx(hit_pos, Color(1.0, 0.95, 0.6), 0.6 if _melee_kind == "heavy" else 0.35)
+		_spawn_battle_fx(BFX_SLASH, hit_pos, head.global_position.direction_to(hit_pos), 0.45, Color(1.0, 0.95, 0.6), 0.6 if _melee_kind == "heavy" else 0.4)
 		_shake = max(_shake, 0.025 if _melee_kind == "light" else 0.06)
 
 func _cast_bolt() -> void:
@@ -336,6 +340,22 @@ func _spawn_vfx(pos: Vector3, color: Color, scale_amt: float) -> void:
 	get_tree().current_scene.add_child(v)
 	v.setup(pos, color, scale_amt)
 
+# Качественный боевой эффект (BattleFX) с запасным вариантом (vfx_burst)
+func _spawn_battle_fx(path: String, pos: Vector3, face: Vector3, lifetime: float, fb_color: Color, fb_scale: float) -> void:
+	var node: Node = null
+	if ResourceLoader.exists(path):
+		var res = load(path)
+		if res != null:
+			node = res.instantiate()
+	if node != null:
+		get_tree().current_scene.add_child(node)
+		node.global_position = pos
+		if face.length() > 0.01:
+			node.global_transform.basis = Basis.looking_at(face.normalized(), Vector3.UP)
+		get_tree().create_timer(lifetime).timeout.connect(node.queue_free)
+	else:
+		_spawn_vfx(pos, fb_color, fb_scale)
+
 func _emit_stats() -> void:
 	EventBus.player_hp_changed.emit(hp, max_hp)
 	EventBus.player_mana_changed.emit(mana, max_mana)
@@ -357,7 +377,8 @@ func _load_body() -> void:
 
 func _ensure_shadow(n: Node) -> void:
 	if n is MeshInstance3D:
-		(n as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_ON
+		# cast_shadow: 1 = ON (рендер + тень). Числом, чтобы не зависеть от имени enum.
+		(n as MeshInstance3D).cast_shadow = 1
 	for c in n.get_children():
 		_ensure_shadow(c)
 
