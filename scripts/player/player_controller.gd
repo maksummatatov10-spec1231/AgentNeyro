@@ -79,6 +79,7 @@ func _ready() -> void:
 	melee_area.body_entered.connect(_on_melee_body_entered)
 	beam_visual.visible = false
 	_load_viewmodel()
+	_load_body()
 	_emit_stats()
 
 func capture_mouse() -> void:
@@ -171,6 +172,13 @@ func _physics_process(delta: float) -> void:
 	velocity.x = lerpf(velocity.x, target.x, smoothing)
 	velocity.z = lerpf(velocity.z, target.z, smoothing)
 	move_and_slide()
+	# Толкаем RigidBody3D (например, бочки) при столкновении телом
+	for i in get_slide_collision_count():
+		var c = get_slide_collision(i)
+		var collider = c.get_collider()
+		if collider is RigidBody3D:
+			var push_dir: Vector3 = -c.get_normal()
+			(collider as RigidBody3D).apply_impulse(push_dir * 5.0, c.get_position() - collider.global_position)
 	# Луч: трата маны + урон
 	if _beam_active:
 		_process_beam(delta)
@@ -334,6 +342,25 @@ func _emit_stats() -> void:
 	EventBus.player_stamina_changed.emit(stamina, max_stamina)
 
 # ---------------- VIEWMODEL ----------------
+func _load_body() -> void:
+	# Видимое тело персонажа (видно при взгляде вниз) + отбрасывает тень.
+	var path := "res://assets/characters/adventurers/Knight.glb"
+	if not ResourceLoader.exists(path):
+		return
+	var res = load(path)
+	if res == null:
+		return
+	var body = res.instantiate()
+	add_child(body)
+	# Гарантируем, что меши тела отбрасывают тень
+	_ensure_shadow(body)
+
+func _ensure_shadow(n: Node) -> void:
+	if n is MeshInstance3D:
+		(n as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_ON
+	for c in n.get_children():
+		_ensure_shadow(c)
+
 func _load_viewmodel() -> void:
 	var path := "res://assets/props/sword_1handed.fbx"
 	# Ассета может не быть на месте — пробуем загрузить безопасно
@@ -348,9 +375,9 @@ func _load_viewmodel() -> void:
 	var inst = res.instantiate()
 	viewmodel.add_child(inst)
 	_apply_mat(inst)
-	viewmodel.position = Vector3(0.32, -0.28, -0.55)
-	viewmodel.rotation = Vector3(deg_to_rad(-12), deg_to_rad(28), deg_to_rad(8))
-	viewmodel.scale = Vector3(0.9, 0.9, 0.9)
+	viewmodel.position = Vector3(0.36, -0.42, -0.72)
+	viewmodel.rotation = Vector3(deg_to_rad(-22), deg_to_rad(34), deg_to_rad(16))
+	viewmodel.scale = Vector3(0.7, 0.7, 0.7)
 
 func _apply_mat(n: Node) -> void:
 	if n is MeshInstance3D:
@@ -375,8 +402,8 @@ func _find_first_fbx(prefix: String) -> String:
 func _swing_viewmodel(kind: String) -> void:
 	if viewmodel == null:
 		return
-	var base_rot := Vector3(deg_to_rad(-12), deg_to_rad(28), deg_to_rad(8))
-	var peak := base_rot + Vector3(deg_to_rad(-70), deg_to_rad(10), 0.0)
+	var base_rot := Vector3(deg_to_rad(-22), deg_to_rad(34), deg_to_rad(16))
+	var peak := base_rot + Vector3(deg_to_rad(-80), deg_to_rad(12), deg_to_rad(-20))
 	var dur := 0.14 if kind == "light" else 0.22
 	var tw := create_tween()
 	tw.tween_property(viewmodel, "rotation", peak, dur).set_ease(Tween.EASE_OUT)

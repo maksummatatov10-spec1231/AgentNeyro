@@ -22,12 +22,13 @@ func take_damage(amount: float, source_pos: Vector3) -> void:
 	hp -= amount
 	_flash()
 	_damage_number(amount)
-	# Отбрасывание
+	# Отбрасывание (сильное — бочка улетает и кувыркается от одного удара)
 	var dir: Vector3 = global_position - source_pos
 	dir.y = 0.0
 	if dir.length() > 0.001:
 		dir = dir.normalized()
-		apply_impulse(dir * amount * 0.55 + Vector3.UP * amount * 0.04, Vector3.ZERO)
+		apply_impulse(dir * 7.0 + Vector3.UP * 2.6, Vector3.ZERO)
+		apply_torque_impulse(Vector3(randf_range(-3.0, 3.0), randf_range(-3.0, 3.0), randf_range(-3.0, 3.0)))
 	if hp <= 0.0:
 		_die()
 

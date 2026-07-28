@@ -128,15 +128,40 @@ func _place(path: String, pos: Vector3, rot_y: float = 0.0, sc: float = 1.0, mak
 	add_child(inst)
 	_apply_material_recursive(inst)
 	if make_collision:
-		_add_trimesh_collision(inst)
+		_add_collision(inst)
 	return inst
 
-func _add_trimesh_collision(node: Node) -> void:
-	# Генерируем точную вогнутую коллизию по мешу (стены/колонны/пропы — непроходимы)
+# Надёжная для CharacterBody3D коллизия: один бокс по мировому AABB объекта
+func _add_collision(tile_root: Node) -> void:
+	var aabb := _global_aabb(tile_root)
+	if aabb.size.length() < 0.05:
+		return
+	var body := StaticBody3D.new()
+	var col := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = aabb.size
+	col.shape = box
+	body.add_child(col)
+	add_child(body)
+	body.global_position = aabb.get_center()
+
+func _global_aabb(node: Node) -> AABB:
+	var result := AABB()
+	var found := false
 	if node is MeshInstance3D:
-		(node as MeshInstance3D).create_trimesh_collision()
+		var mi := node as MeshInstance3D
+		if mi.mesh != null:
+			result = mi.global_transform * mi.get_aabb()
+			found = true
 	for c in node.get_children():
-		_add_trimesh_collision(c)
+		var ca := _global_aabb(c)
+		if ca.size.length() > 0.001:
+			if not found:
+				result = ca
+				found = true
+			else:
+				result = result.merge(ca)
+	return result
 
 func _rand_from(arr: Array) -> String:
 	if arr.is_empty():
